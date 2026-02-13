@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { useAuth } from "../contexts/AuthContext";
 import { formatDateLocal } from "../utils/dateUtils";
@@ -92,6 +92,25 @@ export const TaskCalendar = () => {
     }
   };
 
+  const deleteTask = async () => {
+    if (!task || !taskId) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${task.name}"? This action cannot be undone.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const taskRef = doc(db, "tasks", taskId);
+      await deleteDoc(taskRef);
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      alert("Failed to delete task. Please try again.");
+    }
+  };
+
   const isDateCompleted = (date: Date): boolean => {
     if (!task || date.getTime() === 0) return false;
     const dateStr = formatDateLocal(date);
@@ -154,7 +173,7 @@ export const TaskCalendar = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 md:px-8 py-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition"
@@ -173,6 +192,25 @@ export const TaskCalendar = () => {
               />
             </svg>
             Back to Home
+          </button>
+          <button
+            onClick={deleteTask}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Delete Task
           </button>
         </div>
       </header>
