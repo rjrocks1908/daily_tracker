@@ -123,6 +123,15 @@ export const TaskCalendar = () => {
     return date.toDateString() === today.toDateString();
   };
 
+  const isFutureDate = (date: Date): boolean => {
+    if (date.getTime() === 0) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate.getTime() > today.getTime();
+  };
+
   const previousMonth = () => {
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1),
@@ -267,16 +276,20 @@ export const TaskCalendar = () => {
                 const isEmpty = date.getTime() === 0;
                 const completed = isDateCompleted(date);
                 const today = isToday(date);
+                const isFuture = isFutureDate(date);
+                const isDisabled = isEmpty || isFuture;
 
                 return (
                   <div
                     key={index}
-                    onClick={() => !isEmpty && toggleDate(date)}
+                    onClick={() => !isDisabled && toggleDate(date)}
                     className={`
                       aspect-square flex items-center justify-center rounded-lg text-sm md:text-base font-medium
-                      ${isEmpty ? "invisible" : "cursor-pointer"}
-                      ${completed ? "bg-green-500 text-white" : "bg-gray-50 text-gray-900 hover:bg-gray-100"}
+                      ${isEmpty ? "invisible" : ""}
+                      ${isDisabled ? "cursor-not-allowed" : "cursor-pointer"}
+                      ${completed ? "bg-green-500 text-white" : isFuture ? "bg-gray-100 text-gray-400" : "bg-gray-50 text-gray-900 hover:bg-gray-100"}
                       ${today ? "ring-2 ring-blue-500" : ""}
+                      ${isFuture && !isEmpty ? "opacity-60" : ""}
                       transition-all
                     `}
                   >
@@ -301,13 +314,6 @@ export const TaskCalendar = () => {
                 <span className="text-gray-700">Today</span>
               </div>
             </div>
-          </div>
-
-          {/* Help Button */}
-          <div className="fixed bottom-6 right-6">
-            <button className="w-12 h-12 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-800 transition">
-              <span className="text-xl">?</span>
-            </button>
           </div>
         </div>
       </main>
