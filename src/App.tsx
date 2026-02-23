@@ -13,6 +13,7 @@ import { CreateTask } from "./pages/CreateTask";
 import { TaskCalendar } from "./pages/TaskCalendar";
 import { DiaryCalendar } from "./pages/DiaryCalendar";
 import { DiaryEntry } from "./pages/DiaryEntry";
+import { SpecialTaskView } from "./pages/SpecialTaskView";
 
 function App() {
   return (
@@ -42,6 +43,14 @@ function App() {
             element={
               <PrivateRoute>
                 <TaskCalendar />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/special-task/:taskId"
+            element={
+              <PrivateRoute>
+                <SpecialTaskView />
               </PrivateRoute>
             }
           />

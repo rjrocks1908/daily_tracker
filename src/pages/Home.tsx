@@ -19,70 +19,61 @@ interface Task {
   id: string;
   name: string;
   userId: string;
-  completedDates: string[];
+  taskType?: string; // "normal" | "special" | undefined (legacy = normal)
+  completedDates: string[]; // for normal tasks
+  choices?: string[]; // for special tasks
+  entries?: Record<string, number>; // for special tasks: dateStr → choiceIndex
 }
+
+const getScore = (choiceIndex: number, totalChoices: number): number =>
+  choiceIndex - Math.floor(totalChoices / 2);
+
+const isSpecial = (task: Task) => task.taskType === "special";
 
 export const Home = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [weekDates, setWeekDates] = useState<Date[]>([]);
-  const [weekOffset, setWeekOffset] = useState(0); // 0 = current week, -1 = previous week, 1 = next week
+  const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
-    // Handle window resize to detect mobile/tablet/desktop
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
-    // Generate week dates based on offset (latest first)
     const generateWeekDates = (offset: number) => {
       const dates: Date[] = [];
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
-      // Get the current day of week (0 = Sunday, 6 = Saturday)
       const currentDay = today.getDay();
-
-      // Calculate the start of the week (Sunday)
       const startOfWeek = new Date(today);
       startOfWeek.setDate(today.getDate() - currentDay + offset * 7);
-
-      // Generate 7 days from start of week
       for (let i = 0; i < 7; i++) {
         const date = new Date(startOfWeek);
         date.setDate(startOfWeek.getDate() + i);
         dates.push(date);
       }
-
-      // Reverse to show latest first
       return dates.reverse();
     };
-
     setWeekDates(generateWeekDates(weekOffset));
   }, [weekOffset]);
 
   useEffect(() => {
     const fetchTasks = async () => {
       if (!currentUser) return;
-
       try {
         const tasksRef = collection(db, "tasks");
         const q = query(tasksRef, where("userId", "==", currentUser.uid));
         const querySnapshot = await getDocs(q);
-
         const fetchedTasks: Task[] = [];
         querySnapshot.forEach((doc) => {
           fetchedTasks.push({ id: doc.id, ...doc.data() } as Task);
         });
-
         setTasks(fetchedTasks);
       } catch (error) {
         console.error("Error fetching tasks:", error);
@@ -90,7 +81,6 @@ export const Home = () => {
         setLoading(false);
       }
     };
-
     fetchTasks();
   }, [currentUser]);
 
@@ -105,7 +95,7 @@ export const Home = () => {
 
   const toggleTaskCompletion = async (taskId: string, dateStr: string) => {
     const task = tasks.find((t) => t.id === taskId);
-    if (!task) return;
+    if (!task || isSpecial(task)) return;
 
     const isCompleted = task.completedDates.includes(dateStr);
     const updatedDates = isCompleted
@@ -114,10 +104,7 @@ export const Home = () => {
 
     try {
       const taskRef = doc(db, "tasks", taskId);
-      await updateDoc(taskRef, {
-        completedDates: updatedDates,
-      });
-
+      await updateDoc(taskRef, { completedDates: updatedDates });
       setTasks(
         tasks.map((t) =>
           t.id === taskId ? { ...t, completedDates: updatedDates } : t,
@@ -130,12 +117,11 @@ export const Home = () => {
 
   const isTaskCompleted = (task: Task, date: Date): boolean => {
     const dateStr = formatDateLocal(date);
-    return task.completedDates.includes(dateStr);
+    return task.completedDates?.includes(dateStr) ?? false;
   };
 
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
-  };
+  const formatDate = (date: Date): string =>
+    date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
 
   const isToday = (date: Date): boolean => {
     const today = new Date();
@@ -154,15 +140,9 @@ export const Home = () => {
   };
 
   const getFilteredDates = (): Date[] => {
-    if (!isMobile || weekOffset !== 0) {
-      // On tablet/desktop or when viewing past/future weeks, show all dates
-      return weekDates;
-    }
-
-    // On mobile and current week, show only current and past dates
+    if (!isMobile || weekOffset !== 0) return weekDates;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     return weekDates.filter((date) => {
       const compareDate = new Date(date);
       compareDate.setHours(0, 0, 0, 0);
@@ -172,41 +152,72 @@ export const Home = () => {
 
   const calculateProgress = (): number => {
     const filteredDates = getFilteredDates();
-    if (tasks.length === 0 || filteredDates.length === 0) return 0;
-
-    const totalPossible = tasks.length * filteredDates.length;
+    const normalTasks = tasks.filter((t) => !isSpecial(t));
+    if (normalTasks.length === 0 || filteredDates.length === 0) return 0;
+    const totalPossible = normalTasks.length * filteredDates.length;
     let completed = 0;
-
-    tasks.forEach((task) => {
+    normalTasks.forEach((task) => {
       filteredDates.forEach((date) => {
-        if (isTaskCompleted(task, date)) {
-          completed++;
-        }
+        if (isTaskCompleted(task, date)) completed++;
       });
     });
-
     return (completed / totalPossible) * 100;
   };
 
-  const goToPreviousWeek = () => {
-    setWeekOffset(weekOffset - 1);
-  };
-
-  const goToNextWeek = () => {
-    setWeekOffset(weekOffset + 1);
-  };
-
-  const goToCurrentWeek = () => {
-    setWeekOffset(0);
-  };
+  const goToPreviousWeek = () => setWeekOffset(weekOffset - 1);
+  const goToNextWeek = () => setWeekOffset(weekOffset + 1);
+  const goToCurrentWeek = () => setWeekOffset(0);
 
   const getWeekRange = (): string => {
     if (weekDates.length === 0) return "";
-    const firstDate = weekDates[weekDates.length - 1]; // First day (Sunday)
-    const lastDate = weekDates[0]; // Last day (Saturday)
+    const firstDate = weekDates[weekDates.length - 1];
+    const lastDate = weekDates[0];
     const format = (date: Date) =>
       date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return `${format(firstDate)} - ${format(lastDate)}`;
+  };
+
+  // Special task cell renderer
+  const renderSpecialCell = (task: Task, date: Date, index: number) => {
+    const dateStr = formatDateLocal(date);
+    const today = isToday(date);
+    const future = isFutureDate(date);
+    const entryIndex = task.entries?.[dateStr];
+    const hasEntry = entryIndex !== undefined;
+    const totalChoices = task.choices?.length ?? 3;
+    const score = hasEntry ? getScore(entryIndex, totalChoices) : null;
+    const choiceName = hasEntry ? task.choices?.[entryIndex] : null;
+
+    let pillStyle = "";
+    if (hasEntry && score !== null) {
+      if (score > 0) pillStyle = "bg-green-100 text-green-800";
+      else if (score < 0) pillStyle = "bg-red-100 text-red-700";
+      else pillStyle = "bg-gray-100 text-gray-600";
+    }
+
+    return (
+      <td
+        key={index}
+        className={`px-2 md:px-4 py-4 border-r border-gray-200 last:border-r-0 ${today ? "bg-blue-50" : ""}`}
+      >
+        <div className="flex items-center justify-center">
+          {future ? (
+            <span className="text-gray-300 text-xs">—</span>
+          ) : hasEntry ? (
+            <span
+              className={`text-xs font-medium px-2 py-1 rounded-full truncate max-w-[90px] inline-block text-center ${pillStyle}`}
+              title={choiceName ?? ""}
+            >
+              {choiceName}
+            </span>
+          ) : (
+            <span className="text-gray-300 text-xs border border-dashed border-gray-300 rounded-full px-2 py-1">
+              —
+            </span>
+          )}
+        </div>
+      </td>
+    );
   };
 
   if (loading) {
@@ -239,7 +250,6 @@ export const Home = () => {
         </div>
       </Header>
 
-      {/* Main Content */}
       <main className="p-4 md:p-8">
         {/* Week Navigation */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
@@ -326,7 +336,7 @@ export const Home = () => {
               <table className="min-w-full border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="sticky left-0 bg-white z-10 px-4 md:px-6 py-4 text-left text-sm font-semibold text-gray-900 border-r border-gray-200 min-w-[120px]">
+                    <th className="sticky left-0 bg-white z-10 px-4 md:px-6 py-4 text-left text-sm font-semibold text-gray-900 border-r border-gray-200 min-w-[140px]">
                       Task
                     </th>
                     {getFilteredDates().map((date, index) => {
@@ -371,13 +381,33 @@ export const Home = () => {
                         key={task.id}
                         className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
                       >
+                        {/* Task Name Cell */}
                         <td
-                          className="sticky left-0 bg-white z-10 px-4 md:px-6 py-4 text-sm font-medium text-gray-900 border-r border-gray-200 cursor-pointer hover:text-gray-600"
-                          onClick={() => navigate(`/task/${task.id}`)}
+                          className="sticky left-0 bg-white z-10 px-4 md:px-6 py-4 border-r border-gray-200 cursor-pointer hover:text-gray-600"
+                          onClick={() =>
+                            navigate(
+                              isSpecial(task)
+                                ? `/special-task/${task.id}`
+                                : `/task/${task.id}`,
+                            )
+                          }
                         >
-                          {task.name}
+                          <div className="text-sm font-medium text-gray-900">
+                            {task.name}
+                          </div>
+                          {isSpecial(task) && (
+                            <div className="text-xs text-indigo-500 font-medium mt-0.5">
+                              ✨ special
+                            </div>
+                          )}
                         </td>
+
+                        {/* Date Cells */}
                         {getFilteredDates().map((date, index) => {
+                          if (isSpecial(task)) {
+                            return renderSpecialCell(task, date, index);
+                          }
+
                           const dateStr = formatDateLocal(date);
                           const completed = isTaskCompleted(task, date);
                           const today = isToday(date);
@@ -421,8 +451,8 @@ export const Home = () => {
 
           {tasks.length > 0 && (
             <div className="px-6 py-4 text-center text-sm text-gray-500 border-t border-gray-200">
-              Click on a task name to view detailed calendar or click on a date
-              cell to toggle completion
+              Click a task name to view details · Normal tasks: click a date to
+              toggle · Special tasks: view-only on this page
             </div>
           )}
         </div>
