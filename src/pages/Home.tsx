@@ -231,18 +231,24 @@ export const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header>
-        <h1 className="text-2xl font-bold text-gray-900">Daily Tracker</h1>
-        <div className="flex items-center gap-2">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Daily Tracker</h1>
+        <div className="flex items-center flex-wrap justify-end gap-2">
+          <button
+            onClick={() => navigate("/blogs")}
+            className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+          >
+            Blogs
+          </button>
           <button
             onClick={() => navigate("/diary")}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
           >
             <Diary />
             Diary
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
           >
             <Logout />
             Logout

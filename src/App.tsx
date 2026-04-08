@@ -14,6 +14,7 @@ import { TaskCalendar } from "./pages/TaskCalendar";
 import { DiaryCalendar } from "./pages/DiaryCalendar";
 import { DiaryEntry } from "./pages/DiaryEntry";
 import { SpecialTaskView } from "./pages/SpecialTaskView";
+import { Blogs } from "./pages/Blogs";
 
 function App() {
   return (
@@ -67,6 +68,14 @@ function App() {
             element={
               <PrivateRoute>
                 <DiaryEntry />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/blogs"
+            element={
+              <PrivateRoute>
+                <Blogs />
               </PrivateRoute>
             }
           />
