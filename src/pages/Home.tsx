@@ -240,6 +240,12 @@ export const Home = () => {
             Blogs
           </button>
           <button
+            onClick={() => navigate("/uploads")}
+            className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+          >
+            Uploads
+          </button>
+          <button
             onClick={() => navigate("/diary")}
             className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
           >

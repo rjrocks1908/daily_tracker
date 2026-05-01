@@ -15,6 +15,7 @@ import { DiaryCalendar } from "./pages/DiaryCalendar";
 import { DiaryEntry } from "./pages/DiaryEntry";
 import { SpecialTaskView } from "./pages/SpecialTaskView";
 import { Blogs } from "./pages/Blogs";
+import { Uploads } from "./pages/Uploads";
 
 function App() {
   return (
@@ -76,6 +77,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Blogs />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/uploads"
+            element={
+              <PrivateRoute>
+                <Uploads />
               </PrivateRoute>
             }
           />
