@@ -42,9 +42,19 @@ export const UploadsList = ({
   onDelete,
   onDownload,
 }: UploadsListProps) => {
+  const totalStorageBytes = uploads.reduce(
+    (sum, upload) => sum + (upload.fileSize || 0),
+    0,
+  );
+
   return (
     <section className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Uploads</h2>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-gray-900">Your Uploads</h2>
+        <div className="text-xs md:text-sm text-gray-500">
+          {uploads.length} files • {formatFileSize(totalStorageBytes)} used
+        </div>
+      </div>
 
       {loading ? (
         <p className="text-sm text-gray-600">Loading uploads...</p>
