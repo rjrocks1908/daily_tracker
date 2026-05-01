@@ -10,8 +10,10 @@ import {
 } from "firebase/firestore";
 import {
   deleteObject,
+  getMetadata,
   getDownloadURL,
   ref,
+  updateMetadata,
   uploadBytes,
 } from "firebase/storage";
 import { db, storage } from "../../../firebase/config";
@@ -26,6 +28,12 @@ export const MAX_UPLOAD_SIZE_MB = 200;
 export const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
 
 class FirebaseUploadService {
+  private getAttachmentContentDisposition(fileName: string): string {
+    const safeFileName = fileName.replace(/\"/g, "");
+    const encoded = encodeURIComponent(safeFileName);
+    return `attachment; filename="${safeFileName}"; filename*=UTF-8''${encoded}`;
+  }
+
   private sanitizeFileName(name: string): string {
     return name.replace(/[^a-zA-Z0-9._-]/g, "_");
   }
@@ -68,6 +76,7 @@ class FirebaseUploadService {
 
     await uploadBytes(fileRef, file, {
       contentType: file.type || "application/octet-stream",
+      contentDisposition: this.getAttachmentContentDisposition(file.name),
     });
 
     const downloadURL = await getDownloadURL(fileRef);
@@ -118,6 +127,7 @@ class FirebaseUploadService {
 
     await uploadBytes(newFileRef, file, {
       contentType: file.type || "application/octet-stream",
+      contentDisposition: this.getAttachmentContentDisposition(file.name),
     });
 
     const newDownloadURL = await getDownloadURL(newFileRef);
@@ -158,10 +168,33 @@ class FirebaseUploadService {
     return getDownloadURL(storageRef);
   }
 
+  private async ensureAttachmentMetadata(record: UploadedFileRecord): Promise<void> {
+    const storageRef = ref(storage, record.storagePath);
+    const expectedDisposition = this.getAttachmentContentDisposition(
+      record.originalFileName,
+    );
+
+    try {
+      const metadata = await getMetadata(storageRef);
+      if (metadata.contentDisposition === expectedDisposition) {
+        return;
+      }
+
+      await updateMetadata(storageRef, {
+        contentDisposition: expectedDisposition,
+        contentType: metadata.contentType || record.contentType || "application/octet-stream",
+      });
+    } catch (error) {
+      console.error("Could not ensure attachment metadata:", error);
+    }
+  }
+
   async download(record: UploadedFileRecord): Promise<void> {
-    const url = await this.getFreshDownloadUrl(record);
+    await this.ensureAttachmentMetadata(record);
+    const downloadUrl = await this.getFreshDownloadUrl(record);
+
     const link = document.createElement("a");
-    link.href = url;
+    link.href = downloadUrl;
     link.download = record.originalFileName;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
