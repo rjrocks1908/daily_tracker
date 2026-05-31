@@ -2,6 +2,7 @@ export interface ExpenseTag {
   id: string;
   userId: string;
   name: string;
+  budget?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,9 +37,11 @@ export interface UpdateExpenseInput {
 export interface CreateTagInput {
   userId: string;
   name: string;
+  budget?: number;
 }
 
 export interface UpdateTagInput {
   id: string;
   name: string;
+  budget?: number;
 }

@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { ExpenseFilters } from "../features/expenses/components/ExpenseFilters";
-import { ExpenseForm } from "../features/expenses/components/ExpenseForm";
+import { ExpenseFormModal } from "../features/expenses/components/ExpenseFormModal";
 import { ExpensesByMonth } from "../features/expenses/components/ExpensesByMonth";
+import { BudgetOverview } from "../features/expenses/components/BudgetOverview";
 import { firebaseExpensesService } from "../features/expenses/services/FirebaseExpensesService";
 import type { ExpenseEntry, ExpenseTag } from "../features/expenses/types/expense";
 import { sortExpensesByDateDesc } from "../features/expenses/utils/expenseUtils";
@@ -18,6 +19,7 @@ export const Expenses = () => {
   const [savingExpense, setSavingExpense] = useState(false);
   const [busyExpenseId, setBusyExpenseId] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<ExpenseEntry | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
   const [pageError, setPageError] = useState("");
 
@@ -131,6 +133,7 @@ export const Expenses = () => {
       setExpenses((prev) => prev.filter((item) => item.id !== expense.id));
       if (editingExpense?.id === expense.id) {
         setEditingExpense(null);
+        setShowModal(false);
       }
       setPageError("");
     } catch (error) {
@@ -139,6 +142,21 @@ export const Expenses = () => {
     } finally {
       setBusyExpenseId(null);
     }
+  };
+
+  const handleOpenCreate = () => {
+    setEditingExpense(null);
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (expense: ExpenseEntry) => {
+    setEditingExpense(expense);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingExpense(null);
   };
 
   const handleToggleFilterTag = (tagId: string) => {
@@ -190,6 +208,12 @@ export const Expenses = () => {
           <section className="bg-white rounded-xl shadow-sm p-4 md:p-6">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
+                onClick={handleOpenCreate}
+                className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition"
+              >
+                + Add Expense
+              </button>
+              <button
                 onClick={() => navigate("/expenses/tags")}
                 className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition"
               >
@@ -204,15 +228,19 @@ export const Expenses = () => {
             </div>
           </section>
 
-          <ExpenseForm
-            key={editingExpense?.id ?? "create-expense"}
-            mode={editingExpense ? "edit" : "create"}
-            loading={savingExpense}
-            tags={tags}
-            initialExpense={editingExpense}
-            onSubmit={editingExpense ? handleUpdateExpense : handleCreateExpense}
-            onCancelEdit={editingExpense ? () => setEditingExpense(null) : undefined}
-          />
+          {showModal && (
+            <ExpenseFormModal
+              key={editingExpense?.id ?? "create-expense"}
+              mode={editingExpense ? "edit" : "create"}
+              loading={savingExpense}
+              tags={tags}
+              initialExpense={editingExpense}
+              onSubmit={editingExpense ? handleUpdateExpense : handleCreateExpense}
+              onClose={handleCloseModal}
+            />
+          )}
+
+          <BudgetOverview tags={tags} expenses={expenses} />
 
           <ExpenseFilters
             tags={tags}
@@ -227,7 +255,7 @@ export const Expenses = () => {
             selectedTagIds={selectedTagFilters}
             loading={loading}
             busyExpenseId={busyExpenseId}
-            onEdit={setEditingExpense}
+            onEdit={handleOpenEdit}
             onDelete={handleDeleteExpense}
           />
         </div>

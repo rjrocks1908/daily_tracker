@@ -53,7 +53,22 @@ export const ExpenseTags = () => {
     return usage;
   }, [expenses]);
 
-  const handleCreateTag = async (name: string) => {
+  const spentByTagId = useMemo(() => {
+    const spent: Record<string, number> = {};
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    for (const expense of expenses) {
+      if (!expense.date.startsWith(currentMonthKey)) continue;
+      for (const tagId of expense.tagIds) {
+        spent[tagId] = (spent[tagId] ?? 0) + expense.amount;
+      }
+    }
+
+    return spent;
+  }, [expenses]);
+
+  const handleCreateTag = async (name: string, budget?: number) => {
     if (!currentUser) {
       throw new Error("You need to be logged in.");
     }
@@ -63,6 +78,7 @@ export const ExpenseTags = () => {
       const created = await firebaseExpensesService.createTag({
         userId: currentUser.uid,
         name,
+        budget,
       });
 
       setTags((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
@@ -72,10 +88,10 @@ export const ExpenseTags = () => {
     }
   };
 
-  const handleUpdateTag = async (id: string, name: string) => {
+  const handleUpdateTag = async (id: string, name: string, budget?: number) => {
     setSavingTag(true);
     try {
-      await firebaseExpensesService.updateTag({ id, name });
+      await firebaseExpensesService.updateTag({ id, name, budget });
       setTags((prev) =>
         [...prev]
           .map((tag) =>
@@ -83,6 +99,7 @@ export const ExpenseTags = () => {
               ? {
                   ...tag,
                   name: name.trim().replace(/\s+/g, " "),
+                  budget,
                   updatedAt: new Date().toISOString(),
                 }
               : tag,
@@ -163,6 +180,7 @@ export const ExpenseTags = () => {
             <TagManager
               tags={tags}
               usageByTagId={usageByTagId}
+              spentByTagId={spentByTagId}
               loading={savingTag}
               onCreateTag={handleCreateTag}
               onUpdateTag={handleUpdateTag}

@@ -119,6 +119,7 @@ class FirebaseExpensesService {
     const payload: Omit<ExpenseTag, "id"> = {
       userId: input.userId,
       name: normalizedName,
+      budget: input.budget,
       createdAt: now,
       updatedAt: now,
     };
@@ -134,10 +135,16 @@ class FirebaseExpensesService {
       throw new Error("Tag name is required.");
     }
 
-    await updateDoc(doc(db, EXPENSE_TAGS_COLLECTION, input.id), {
+    const updateData: Record<string, unknown> = {
       name: normalizedName,
       updatedAt: new Date().toISOString(),
-    });
+    };
+
+    if (input.budget !== undefined) {
+      updateData.budget = input.budget;
+    }
+
+    await updateDoc(doc(db, EXPENSE_TAGS_COLLECTION, input.id), updateData);
   }
 
   async deleteTagAndDetachExpenses(userId: string, tagId: string): Promise<void> {
