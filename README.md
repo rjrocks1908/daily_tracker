@@ -21,6 +21,13 @@ A modern web application for tracking daily habits and maintaining a personal di
 - Optimized data fetching with caching
 - Rich text area for writing thoughts
 
+### 💸 Daily Expenses
+
+- Add, edit, and delete daily expenses
+- Create, edit, and delete reusable expense tags from a dedicated Tags page
+- Filter this month's expenses by one or more tags
+- View a dedicated monthly expense calendar with month navigation and monthly totals
+
 ## Tech Stack
 
 - **Frontend**: React 18 + TypeScript
@@ -91,6 +98,15 @@ npm run dev
 6. **Delete**: Use the "Delete Entry" button to remove entries
 7. **Refresh**: Click the refresh button to update highlighted dates
 
+### Daily Expenses
+
+1. **Open Expenses**: Click the "Expenses" tab from the home header
+2. **Add Expense**: Enter amount, date, optional note, and tags
+3. **Filter**: Select one or more tags in the filter section (this month view)
+4. **Manage Tags**: Open "Manage Tags" to create, edit, and delete tags
+5. **Monthly Calendar**: Open "View Monthly Calendar" to see date-wise spends and month total
+6. **Edit/Delete**: Manage expenses from the main expenses page
+
 ## Project Structure
 
 ```
@@ -100,6 +116,9 @@ daily_tracker/
 │   │   └── PrivateRoute.tsx      # Protected route wrapper
 │   ├── contexts/
 │   │   └── AuthContext.tsx       # Authentication context
+│   ├── features/
+│   │   ├── expenses/             # Expenses feature (tags + month grouping)
+│   │   └── uploads/              # Uploads feature
 │   ├── firebase/
 │   │   └── config.ts             # Firebase configuration
 │   ├── pages/
@@ -109,7 +128,10 @@ daily_tracker/
 │   │   ├── CreateTask.tsx        # Task creation page
 │   │   ├── TaskCalendar.tsx      # Individual task calendar
 │   │   ├── DiaryCalendar.tsx     # Diary calendar view
-│   │   └── DiaryEntry.tsx        # Diary entry editor
+│   │   ├── DiaryEntry.tsx        # Diary entry editor
+│   │   ├── Expenses.tsx          # This-month expenses dashboard
+│   │   ├── ExpenseTags.tsx       # Expense tag management page
+│   │   └── ExpensesCalendar.tsx  # Month navigation expense calendar
 │   ├── utils/
 │   │   └── dateUtils.ts          # Date formatting utilities
 │   ├── App.tsx                   # Main app component
@@ -156,6 +178,33 @@ daily_tracker/
   userId: string;
   date: string; // YYYY-MM-DD format
   hasEntry: boolean;
+}
+```
+
+#### `expense_tags`
+
+```typescript
+{
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+}
+```
+
+#### `expenses`
+
+```typescript
+{
+  id: string;
+  userId: string;
+  amount: number;
+  note: string;
+  date: string; // YYYY-MM-DD
+  tagIds: string[];
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
 }
 ```
 

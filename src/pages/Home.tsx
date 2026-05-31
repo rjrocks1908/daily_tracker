@@ -38,12 +38,19 @@ export const Home = () => {
   const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMenuOpen(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const generateWeekDates = (offset: number) => {
@@ -87,6 +94,7 @@ export const Home = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      setIsMenuOpen(false);
       navigate("/login");
     } catch (error) {
       console.error("Failed to logout:", error);
@@ -232,34 +240,98 @@ export const Home = () => {
     <div className="min-h-screen bg-gray-50">
       <Header>
         <h1 className="text-xl md:text-2xl font-bold text-gray-900">Daily Tracker</h1>
-        <div className="flex items-center flex-wrap justify-end gap-2">
-          <button
-            onClick={() => navigate("/blogs")}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
-          >
-            Blogs
-          </button>
-          <button
-            onClick={() => navigate("/uploads")}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
-          >
-            Uploads
-          </button>
-          <button
-            onClick={() => navigate("/diary")}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
-          >
-            <Diary />
-            Diary
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
-          >
-            <Logout />
-            Logout
-          </button>
-        </div>
+        {isMobile ? (
+          <div className="relative">
+            <button
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              aria-label="Open menu"
+            >
+              Menu
+            </button>
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-1">
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate("/blogs");
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                >
+                  Blogs
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate("/uploads");
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                >
+                  Uploads
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate("/expenses");
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                >
+                  Expenses
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate("/diary");
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                >
+                  Diary
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center flex-wrap justify-end gap-2">
+            <button
+              onClick={() => navigate("/blogs")}
+              className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            >
+              Blogs
+            </button>
+            <button
+              onClick={() => navigate("/uploads")}
+              className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            >
+              Uploads
+            </button>
+            <button
+              onClick={() => navigate("/expenses")}
+              className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            >
+              Expenses
+            </button>
+            <button
+              onClick={() => navigate("/diary")}
+              className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            >
+              <Diary />
+              Diary
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+            >
+              <Logout />
+              Logout
+            </button>
+          </div>
+        )}
       </Header>
 
       <main className="p-4 md:p-8">

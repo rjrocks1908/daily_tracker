@@ -16,6 +16,9 @@ import { DiaryEntry } from "./pages/DiaryEntry";
 import { SpecialTaskView } from "./pages/SpecialTaskView";
 import { Blogs } from "./pages/Blogs";
 import { Uploads } from "./pages/Uploads";
+import { Expenses } from "./pages/Expenses";
+import { ExpenseTags } from "./pages/ExpenseTags";
+import { ExpensesCalendar } from "./pages/ExpensesCalendar";
 
 function App() {
   return (
@@ -85,6 +88,30 @@ function App() {
             element={
               <PrivateRoute>
                 <Uploads />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <PrivateRoute>
+                <Expenses />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/expenses/tags"
+            element={
+              <PrivateRoute>
+                <ExpenseTags />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/expenses/calendar"
+            element={
+              <PrivateRoute>
+                <ExpensesCalendar />
               </PrivateRoute>
             }
           />
